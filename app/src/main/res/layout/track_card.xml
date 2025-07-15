@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/cardview_margin_horizon"
+    android:layout_marginVertical="@dimen/cardview_margin_vertical"
+    app:cardCornerRadius="@dimen/cardview_corner_radius">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:padding="@dimen/cardview_padding">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/trackTitle"
+                android:maxLines="2"
+                android:ellipsize="marquee"
+                android:focusable="true"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="1"
+                android:text="No selected track file"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/trackSelectButton"
+                android:layout_gravity="center_vertical"
+                android:text="Select"/>
+
+        </LinearLayout>
+
+        <include
+            layout="@layout/mini_player"
+            android:id="@+id/miniPlayer" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
