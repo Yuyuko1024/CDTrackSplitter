@@ -10,7 +10,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.documentfile.provider.DocumentFile
@@ -29,6 +31,11 @@ import net.hearnsoft.cdtracksplitter.model.Track
 import net.hearnsoft.cdtracksplitter.parser.CueParser
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.roundToInt
 
 class AudioProcessingService : Service() {
@@ -52,10 +59,27 @@ class AudioProcessingService : Service() {
     }
 
     private val binder = ProcessingBinder()
-    private var isProcessing = false
+
+    // 线程管理
+    private val processingExecutor: ExecutorService = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "AudioProcessing").apply {
+            priority = Thread.NORM_PRIORITY - 1 // 稍低优先级避免阻塞UI
+        }
+    }
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    // 状态管理
+    private val isProcessing = AtomicBoolean(false)
+    private val isCancelled = AtomicBoolean(false)
+    private var currentProcessingTask: Future<*>? = null
     private var currentSession: FFmpegSession? = null
 
-    // 处理进度回调
+    // 进度管理
+    private val currentProgress = AtomicInteger(0)
+    private val totalTracks = AtomicInteger(0)
+    private val processedTracks = AtomicInteger(0)
+
+    // 回调接口
     var onProgressUpdate: ((Int, String) -> Unit)? = null
     var onProcessingComplete: ((Boolean, String) -> Unit)? = null
     var onLogUpdate: ((String) -> Unit)? = null
@@ -66,6 +90,7 @@ class AudioProcessingService : Service() {
         super.onCreate()
         createNotificationChannel()
         FFmpegKitConfig.setLogLevel(Level.AV_LOG_INFO)
+        Log.d(TAG, "Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -77,7 +102,7 @@ class AudioProcessingService : Service() {
                 val outputUri = intent.getParcelableExtra<Uri>(EXTRA_OUTPUT_URI)
 
                 if (trackUri != null && cueUri != null && outputUri != null) {
-                    startProcessing(trackUri, cueUri, coverUri, outputUri)
+                    startProcessingAsync(trackUri, cueUri, coverUri, outputUri)
                 }
             }
             ACTION_STOP_PROCESSING -> {
@@ -115,7 +140,7 @@ class AudioProcessingService : Service() {
             .setContentText(content)
             .setSmallIcon(R.drawable.ic_process_24px)
             .setContentIntent(pendingIntent)
-            .setOngoing(isProcessing)
+            .setOngoing(isProcessing.get())
             .setSilent(true)
 
         if (progress >= 0) {
@@ -125,99 +150,137 @@ class AudioProcessingService : Service() {
         return builder.build()
     }
 
-    private fun startProcessing(
+    private fun startProcessingAsync(
         trackUri: Uri,
         cueUri: Uri,
         coverUri: Uri?,
         outputUri: Uri
     ) {
-        if (isProcessing) {
-            Log.w(TAG, "Processing already in progress")
+        if (isProcessing.get()) {
+            postLog("Processing already in progress")
             return
         }
 
-        isProcessing = true
+        // 重置状态
+        isProcessing.set(true)
+        isCancelled.set(false)
+        currentProgress.set(0)
+        processedTracks.set(0)
+
+        // 启动前台服务
         val notification = createNotification("Starting audio processing...", "Preparing files", 0)
         startForeground(NOTIFICATION_ID, notification)
 
-        Thread {
+        // 在后台线程执行处理
+        currentProcessingTask = processingExecutor.submit {
             try {
-                processAudio(trackUri, cueUri, coverUri, outputUri)
+                processAudioInBackground(trackUri, cueUri, coverUri, outputUri)
             } catch (e: Exception) {
                 Log.e(TAG, "Processing failed", e)
-                onProcessingComplete?.invoke(false, "Processing failed: ${e.message}")
-                stopProcessing()
+                postLog("Processing failed: ${e.message}")
+                postProcessingComplete(false, "Processing failed: ${e.message}")
+            } finally {
+                // 确保清理状态
+                mainHandler.post {
+                    stopProcessing()
+                }
             }
-        }.start()
+        }
     }
 
-    private fun processAudio(
+    private fun processAudioInBackground(
         trackUri: Uri,
         cueUri: Uri,
         coverUri: Uri?,
         outputUri: Uri
     ) {
         try {
+            // 检查是否取消
+            if (isCancelled.get()) return
+
             // 解析CUE文件
-            onLogUpdate?.invoke("Parsing CUE file...")
-            updateNotification("Parsing CUE file...", 5)
+            postLog("Parsing CUE file...")
+            postProgressUpdate(5, "Parsing CUE file...")
 
             val cueParser = CueParser(this)
             val cueFile = cueParser.parse(cueUri)
                 ?: throw Exception("Failed to parse CUE file")
 
-            onLogUpdate?.invoke("CUE file parsed successfully. Found ${cueFile.tracks.size} tracks")
+            totalTracks.set(cueFile.tracks.size)
+            postLog("CUE file parsed successfully. Found ${cueFile.tracks.size} tracks")
 
-            // 复制输入文件到临时目录以便FFmpeg访问
-            val tempDir = File(cacheDir, "audio_processing")
+            if (isCancelled.get()) return
+
+            // 准备临时目录和文件
+            postLog("Preparing files...")
+            postProgressUpdate(10, "Preparing files...")
+
+            val tempDir = File(cacheDir, "audio_processing_${System.currentTimeMillis()}")
             if (!tempDir.exists()) tempDir.mkdirs()
 
-            val inputFile = copyUriToTempFile(trackUri, tempDir, "input_audio")
-            val coverFile = coverUri?.let { copyUriToTempFile(it, tempDir, "cover_image") }
+            try {
+                val inputFile = copyUriToTempFile(trackUri, tempDir, "input_audio")
+                val coverFile = coverUri?.let { copyUriToTempFile(it, tempDir, "cover_image") }
 
-            onLogUpdate?.invoke("Files prepared, starting track splitting...")
+                if (isCancelled.get()) return
 
-            // 处理每个轨道
-            val totalTracks = cueFile.tracks.size
-            cueFile.tracks.forEachIndexed { index, track ->
-                if (!isProcessing) return // 检查是否被取消
+                postLog("Files prepared, starting track splitting...")
 
-                val progress = ((index + 1) * 90 / totalTracks) + 5 // 5-95%
-                val trackFileName = sanitizeFileName("${String.format("%02d", track.number)}. ${track.title ?: "Track ${track.number}"}")
+                // 处理每个轨道
+                cueFile.tracks.forEachIndexed { index, track ->
+                    if (isCancelled.get()) return@forEachIndexed
 
-                onLogUpdate?.invoke("Processing track ${track.number}: ${track.title}")
-                updateNotification("Processing track ${track.number}/${totalTracks}", progress)
+                    val baseProgress = 15 // 前面的准备工作占15%
+                    val trackProgress = (index * 80) / cueFile.tracks.size // 每个轨道占80%的进度空间
+                    val currentOverallProgress = baseProgress + trackProgress
 
-                processTrack(
-                    inputFile = inputFile,
-                    coverFile = coverFile,
-                    track = track,
-                    nextTrack = if (index < cueFile.tracks.size - 1) cueFile.tracks[index + 1] else null,
-                    cueFile = cueFile,
-                    outputUri = outputUri,
-                    fileName = trackFileName
-                )
+                    val trackFileName = sanitizeFileName(
+                        "${String.format("%02d", track.number)}. ${track.title ?: "Track ${track.number}"}"
+                    )
 
-                onProgressUpdate?.invoke(progress, "Completed track ${track.number}")
+                    postLog("Processing track ${track.number}: ${track.title}")
+                    postProgressUpdate(currentOverallProgress, "Processing track ${track.number}/${cueFile.tracks.size}")
+
+                    processTrackInBackground(
+                        inputFile = inputFile,
+                        coverFile = coverFile,
+                        track = track,
+                        nextTrack = if (index < cueFile.tracks.size - 1) cueFile.tracks[index + 1] else null,
+                        cueFile = cueFile,
+                        outputUri = outputUri,
+                        fileName = trackFileName
+                    )
+
+                    if (!isCancelled.get()) {
+                        processedTracks.incrementAndGet()
+                        val completedProgress = baseProgress + ((index + 1) * 80) / cueFile.tracks.size
+                        postProgressUpdate(completedProgress, "Completed track ${track.number}")
+                    }
+                }
+
+                if (!isCancelled.get()) {
+                    postProgressUpdate(100, "Processing completed")
+                    postLog("All tracks processed successfully!")
+                    postProcessingComplete(true, "Successfully processed ${cueFile.tracks.size} tracks")
+                }
+
+            } finally {
+                // 清理临时目录
+                try {
+                    tempDir.deleteRecursively()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to clean temp directory", e)
+                }
             }
-
-            // 清理临时文件
-            tempDir.deleteRecursively()
-
-            updateNotification("Processing completed", 100)
-            onLogUpdate?.invoke("All tracks processed successfully!")
-            onProcessingComplete?.invoke(true, "Successfully processed ${totalTracks} tracks")
 
         } catch (e: Exception) {
             Log.e(TAG, "Processing error", e)
-            onLogUpdate?.invoke("Error: ${e.message}")
-            onProcessingComplete?.invoke(false, e.message ?: "Unknown error occurred")
-        } finally {
-            stopProcessing()
+            postLog("Error: ${e.message}")
+            postProcessingComplete(false, e.message ?: "Unknown error occurred")
         }
     }
 
-    private fun processTrack(
+    private fun processTrackInBackground(
         inputFile: File,
         coverFile: File?,
         track: Track,
@@ -226,6 +289,8 @@ class AudioProcessingService : Service() {
         outputUri: Uri,
         fileName: String
     ) {
+        if (isCancelled.get()) return
+
         val startTime = track.mainIndex?.time?.toSeconds() ?: 0.0
         val endTime = nextTrack?.mainIndex?.time?.toSeconds()
 
@@ -234,64 +299,85 @@ class AudioProcessingService : Service() {
         val outputFile = outputDocumentFile?.createFile("audio/flac", "$fileName.flac")
             ?: throw Exception("Failed to create output file")
 
-        // 创建临时输出文件（FFmpeg需要直接文件路径）
-        val tempOutputFile = File(cacheDir, "$fileName.flac")
+        // 创建临时输出文件
+        val tempOutputFile = File(cacheDir, "${fileName}_${System.currentTimeMillis()}.flac")
 
-        // 构建FFmpeg命令
-        val command = buildFFmpegCommand(
-            inputFile = inputFile,
-            coverFile = coverFile,
-            outputFile = tempOutputFile,
-            startTime = startTime,
-            endTime = endTime,
-            track = track,
-            cueFile = cueFile
-        )
+        try {
+            // 构建FFmpeg命令
+            val command = buildFFmpegCommand(
+                inputFile = inputFile,
+                coverFile = coverFile,
+                outputFile = tempOutputFile,
+                startTime = startTime,
+                endTime = endTime,
+                track = track,
+                cueFile = cueFile
+            )
 
-        onLogUpdate?.invoke("FFmpeg command: ${command.joinToString(" ")}")
+            postLog("FFmpeg command: ${command.joinToString(" ")}")
 
-        // 执行FFmpeg命令
-        var lastProgress = 0
-        currentSession = FFmpegKit.executeWithArgumentsAsync(
-            command.toTypedArray(),
-            { session ->
-                val returnCode = session.returnCode
-                if (ReturnCode.isSuccess(returnCode)) {
-                    onLogUpdate?.invoke("Track ${track.number} completed successfully")
-                    // 复制文件到最终输出位置
-                    copyTempFileToOutput(tempOutputFile, outputFile.uri)
-                } else {
-                    val error = "Track ${track.number} failed with return code: $returnCode"
-                    onLogUpdate?.invoke(error)
-                    Log.e(TAG, error)
-                }
-                // 清理临时输出文件
-                tempOutputFile.delete()
-            },
-            LogCallback { log ->
-                onLogUpdate?.invoke("FFmpeg: ${log.message}")
-            },
-            StatisticsCallback { statistics ->
-                // 计算进度（FFmpeg时间 / 轨道总时长）
-                val trackDuration = (endTime ?: Double.MAX_VALUE) - startTime
-                if (trackDuration > 0 && statistics.time > 0) {
-                    val progress = ((statistics.time / 1000.0) / trackDuration * 100).roundToInt()
-                    if (progress > lastProgress) {
-                        lastProgress = progress
-                        onLogUpdate?.invoke("Track ${track.number} progress: $progress%")
+            // 执行FFmpeg命令（异步）
+            val sessionCompleted = AtomicBoolean(false)
+            val sessionSuccess = AtomicBoolean(false)
+
+            currentSession = FFmpegKit.executeWithArgumentsAsync(
+                command.toTypedArray(),
+                { session ->
+                    val returnCode = session.returnCode
+                    sessionSuccess.set(ReturnCode.isSuccess(returnCode))
+
+                    if (ReturnCode.isSuccess(returnCode)) {
+                        postLog("Track ${track.number} completed successfully")
+                    } else {
+                        val error = "Track ${track.number} failed with return code: $returnCode"
+                        postLog(error)
+                        Log.e(TAG, error)
+                    }
+                    sessionCompleted.set(true)
+                },
+                LogCallback { log ->
+                    if (!isCancelled.get()) {
+                        postLog("FFmpeg: ${log.message}")
+                    }
+                },
+                StatisticsCallback { statistics ->
+                    if (!isCancelled.get()) {
+                        // 这里可以添加细粒度的进度更新，但要注意不要过于频繁
+                        val trackDuration = (endTime ?: Double.MAX_VALUE) - startTime
+                        if (trackDuration > 0 && statistics.time > 0) {
+                            val progress = ((statistics.time / 1000.0) / trackDuration * 100).roundToInt()
+                            if (progress % 10 == 0) { // 每10%更新一次，减少UI更新频率
+                                postLog("Track ${track.number} progress: $progress%")
+                            }
+                        }
                     }
                 }
-            }
-        )
+            )
 
-        // 等待命令完成
-        currentSession?.let { session ->
-            while (session.state == SessionState.RUNNING) {
+            // 等待命令完成（在后台线程中）
+            while (!sessionCompleted.get() && !isCancelled.get()) {
                 Thread.sleep(100)
-                if (!isProcessing) {
-                    FFmpegKit.cancel(session.sessionId)
-                    break
+            }
+
+            // 如果被取消，停止FFmpeg会话
+            if (isCancelled.get()) {
+                currentSession?.let { FFmpegKit.cancel(it.sessionId) }
+                return
+            }
+
+            // 如果成功，复制文件到最终输出位置
+            if (sessionSuccess.get()) {
+                copyTempFileToOutput(tempOutputFile, outputFile.uri)
+            }
+
+        } finally {
+            // 清理临时输出文件
+            try {
+                if (tempOutputFile.exists()) {
+                    tempOutputFile.delete()
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to delete temp output file", e)
             }
         }
     }
@@ -362,7 +448,7 @@ class AudioProcessingService : Service() {
             ?: throw Exception("Cannot open input stream for URI: $uri")
 
         val extension = getFileExtension(uri)
-        val tempFile = File(tempDir, "$prefix.$extension")
+        val tempFile = File(tempDir, "${prefix}_${System.currentTimeMillis()}.$extension")
 
         inputStream.use { input ->
             FileOutputStream(tempFile).use { output ->
@@ -374,18 +460,13 @@ class AudioProcessingService : Service() {
     }
 
     private fun copyTempFileToOutput(tempFile: File, outputUri: Uri) {
-        try {
-            val outputStream = contentResolver.openOutputStream(outputUri)
-                ?: throw Exception("Cannot open output stream for URI: $outputUri")
+        val outputStream = contentResolver.openOutputStream(outputUri)
+            ?: throw Exception("Cannot open output stream for URI: $outputUri")
 
-            tempFile.inputStream().use { input ->
-                outputStream.use { output ->
-                    input.copyTo(output)
-                }
+        tempFile.inputStream().use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to copy temp file to output", e)
-            throw e
         }
     }
 
@@ -417,18 +498,45 @@ class AudioProcessingService : Service() {
             .trim()
     }
 
+    // 线程安全的UI更新方法
+    private fun postProgressUpdate(progress: Int, message: String) {
+        currentProgress.set(progress)
+        mainHandler.post {
+            updateNotification(message, progress)
+            onProgressUpdate?.invoke(progress, message)
+        }
+    }
+
+    private fun postLog(message: String) {
+        mainHandler.post {
+            onLogUpdate?.invoke(message)
+        }
+    }
+
+    private fun postProcessingComplete(success: Boolean, message: String) {
+        mainHandler.post {
+            onProcessingComplete?.invoke(success, message)
+        }
+    }
+
     private fun updateNotification(content: String, progress: Int) {
         val notification = createNotification("Processing CD Tracks", content, progress)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notification)
-
-        onProgressUpdate?.invoke(progress, content)
     }
 
     private fun stopProcessing() {
-        isProcessing = false
+        isCancelled.set(true)
+        isProcessing.set(false)
+
+        // 取消当前FFmpeg会话
         currentSession?.let { FFmpegKit.cancel(it.sessionId) }
         currentSession = null
+
+        // 取消当前处理任务
+        currentProcessingTask?.cancel(true)
+        currentProcessingTask = null
+
         stopForeground(true)
         stopSelf()
     }
@@ -436,5 +544,6 @@ class AudioProcessingService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         stopProcessing()
+        processingExecutor.shutdown()
     }
 }

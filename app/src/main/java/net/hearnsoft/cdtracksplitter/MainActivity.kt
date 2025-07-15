@@ -98,34 +98,31 @@ class MainActivity : AppCompatActivity() {
             audioProcessingService = binder.getService()
             isServiceBound = true
 
-            // 设置回调
+            // 设置回调 - 这些回调已经在主线程中执行
             audioProcessingService?.onProgressUpdate = { progress, message ->
-                runOnUiThread {
-                    binding.outputCardView.outputProgressBar.progress = progress
-                    appendLog("Progress: $progress% - $message")
-                }
+                // 直接更新UI，因为已经在主线程
+                binding.outputCardView.outputProgressBar.progress = progress
+                appendLog("Progress: $progress% - $message")
             }
 
             audioProcessingService?.onProcessingComplete = { success, message ->
-                runOnUiThread {
-                    isProcessing = false
-                    updateProcessingUI()
+                // 直接更新UI，因为已经在主线程
+                isProcessing = false
+                updateProcessingUI()
 
-                    if (success) {
-                        appendLog("✓ Processing completed successfully!")
-                        binding.outputCardView.outputProgressBar.progress = 100
-                        Toast.makeText(this@MainActivity, "All tracks processed successfully!", Toast.LENGTH_LONG).show()
-                    } else {
-                        appendLog("✗ Processing failed: $message")
-                        Toast.makeText(this@MainActivity, "Processing failed: $message", Toast.LENGTH_LONG).show()
-                    }
+                if (success) {
+                    appendLog("✓ Processing completed successfully!")
+                    binding.outputCardView.outputProgressBar.progress = 100
+                    Toast.makeText(this@MainActivity, "All tracks processed successfully!", Toast.LENGTH_LONG).show()
+                } else {
+                    appendLog("✗ Processing failed: $message")
+                    Toast.makeText(this@MainActivity, "Processing failed: $message", Toast.LENGTH_LONG).show()
                 }
             }
 
             audioProcessingService?.onLogUpdate = { message ->
-                runOnUiThread {
-                    appendLog(message)
-                }
+                // 直接更新UI，因为已经在主线程
+                appendLog(message)
             }
         }
 
