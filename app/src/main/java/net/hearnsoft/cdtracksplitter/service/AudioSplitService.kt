@@ -26,6 +26,7 @@ import com.arthenica.ffmpegkit.SessionState
 import com.arthenica.ffmpegkit.StatisticsCallback
 import net.hearnsoft.cdtracksplitter.MainActivity
 import net.hearnsoft.cdtracksplitter.R
+import net.hearnsoft.cdtracksplitter.metadata.MetadataUpdater
 import net.hearnsoft.cdtracksplitter.model.CueFile
 import net.hearnsoft.cdtracksplitter.model.Track
 import net.hearnsoft.cdtracksplitter.parser.CueParser
@@ -306,12 +307,9 @@ class AudioProcessingService : Service() {
             // 构建FFmpeg命令
             val command = buildFFmpegCommand(
                 inputFile = inputFile,
-                coverFile = coverFile,
                 outputFile = tempOutputFile,
                 startTime = startTime,
-                endTime = endTime,
-                track = track,
-                cueFile = cueFile
+                endTime = endTime
             )
 
             postLog("FFmpeg command: ${command.joinToString(" ")}")
@@ -368,6 +366,21 @@ class AudioProcessingService : Service() {
             // 如果成功，复制文件到最终输出位置
             if (sessionSuccess.get()) {
                 copyTempFileToOutput(tempOutputFile, outputFile.uri)
+
+                // 更新metadata和封面
+                val metadataUpdater = MetadataUpdater(this)
+                val metadataUpdateSuccess = metadataUpdater.updateFlacMetadata(
+                    audioFileUri = outputFile.uri,
+                    track = track,
+                    cueFile = cueFile,
+                    coverImageUri = coverFile?.let { Uri.fromFile(it) }
+                )
+
+                if (metadataUpdateSuccess) {
+                    postLog("Metadata and cover updated for track ${track.number}")
+                } else {
+                    postLog("Warning: Failed to update metadata for track ${track.number}")
+                }
             }
 
         } finally {
@@ -384,22 +397,14 @@ class AudioProcessingService : Service() {
 
     private fun buildFFmpegCommand(
         inputFile: File,
-        coverFile: File?,
         outputFile: File,
         startTime: Double,
         endTime: Double?,
-        track: Track,
-        cueFile: CueFile
     ): List<String> {
         val command = mutableListOf<String>()
 
         // 输入文件
         command.addAll(listOf("-i", inputFile.absolutePath))
-
-        // 封面图片（如果有）
-        coverFile?.let {
-            command.addAll(listOf("-i", it.absolutePath))
-        }
 
         // 时间范围
         command.addAll(listOf("-ss", formatTime(startTime)))
@@ -414,25 +419,8 @@ class AudioProcessingService : Service() {
             "-compression_level", "8"
         ))
 
-        // 封面图片映射（如果有）
-        if (coverFile != null) {
-            command.addAll(listOf(
-                "-map", "0:a",
-                "-map", "1:v",
-                "-c:v", "copy",
-                "-disposition:v", "attached_pic"
-            ))
-        }
-
-        // Metadata
-        track.title?.let { command.addAll(listOf("-metadata", "title=$it")) }
-        track.performer?.let { command.addAll(listOf("-metadata", "artist=$it")) }
-        cueFile.title?.let { command.addAll(listOf("-metadata", "album=$it")) }
-        cueFile.performer?.let { command.addAll(listOf("-metadata", "albumartist=$it")) }
-        cueFile.date?.let { command.addAll(listOf("-metadata", "date=$it")) }
-        cueFile.genre?.let { command.addAll(listOf("-metadata", "genre=$it")) }
-        command.addAll(listOf("-metadata", "track=${track.number}"))
-        command.addAll(listOf("-metadata", "tracktotal=${cueFile.tracks.size}"))
+        // 只复制音频流，不处理封面和metadata（这些由MetadataUpdater处理）
+        command.addAll(listOf("-map", "0:a"))
 
         // 输出设置
         command.addAll(listOf(
