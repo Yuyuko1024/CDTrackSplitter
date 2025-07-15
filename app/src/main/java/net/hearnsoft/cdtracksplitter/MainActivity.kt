@@ -182,6 +182,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 设置输出日志文本视图
+        binding.outputCardView.outputLogTextView.movementMethod = ScrollingMovementMethod()
+
         binding.trackCardView.miniPlayer.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(
                 seekBar: SeekBar?,

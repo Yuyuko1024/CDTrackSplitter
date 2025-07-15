@@ -47,6 +47,7 @@
                     android:layout_height="400dp"
                     android:id="@+id/outputLogTextView"
                     android:ellipsize="start"
+                    android:scrollbars="vertical"
                     android:text="No ffmpeg output log"
                     android:paddingTop="8dp"/>
 
