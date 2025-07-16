@@ -26,12 +26,25 @@
             android:id="@+id/processButton"
             android:text="@string/process_button"/>
 
-        <ProgressBar
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/outputProgressBar"
-            android:visibility="gone"
-            style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/progressText"
+                android:visibility="gone"/>
+
+            <ProgressBar
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/outputProgressBar"
+                android:visibility="gone"
+                style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"

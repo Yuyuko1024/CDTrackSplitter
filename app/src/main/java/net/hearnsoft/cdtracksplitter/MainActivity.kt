@@ -107,6 +107,7 @@ class MainActivity : AppCompatActivity() {
             audioProcessingService?.onProgressUpdate = { progress, message ->
                 // 直接更新UI，因为已经在主线程
                 binding.outputCardView.outputProgressBar.progress = progress
+                binding.outputCardView.progressText.text = message
                 appendLog("Progress: $progress% - $message")
             }
 
@@ -114,6 +115,8 @@ class MainActivity : AppCompatActivity() {
                 // 直接更新UI，因为已经在主线程
                 isProcessing = false
                 updateProcessingUI()
+
+                binding.outputCardView.progressText.text = message
 
                 if (success) {
                     appendLog(getString(R.string.log_process_success))
@@ -289,9 +292,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 设置输出日志文本视图
-        binding.outputCardView.outputLogTextView.movementMethod = ScrollingMovementMethod()
-
         binding.trackCardView.miniPlayer.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(
                 seekBar: SeekBar?,
@@ -464,9 +464,7 @@ class MainActivity : AppCompatActivity() {
         if (isProcessing) {
             binding.outputCardView.outputProgressBar.visibility = View.VISIBLE
             binding.outputCardView.outputProgressBar.progress = 0
-        } else {
-            // 保持进度条可见，显示最终结果
-            // binding.outputCardView.outputProgressBar.visibility = View.GONE
+            binding.outputCardView.progressText.visibility = View.VISIBLE
         }
     }
 
