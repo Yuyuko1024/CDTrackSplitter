@@ -64,4 +64,13 @@
     <string name="select_button">选择</string>
     <string name="select_output_dir">选择输出目录</string>
     <string name="process_button">处理</string>
+
+    <!-- Permission dialog strings -->
+    <string name="permission_required_title">需要权限</string>
+    <string name="audio_permission_required_message">应用需要音频读取权限才能正常运行。请授予此权限以继续使用。</string>
+    <string name="audio_permission_settings_message">应用需要音频读取权限才能正常运行。请前往设置手动开启此权限。</string>
+    <string name="optional_permissions_denied">部分可选权限未授予，某些功能可能会受限。</string>
+    <string name="retry">重试</string>
+    <string name="settings">设置</string>
+    <string name="exit_app">退出应用</string>
 </resources>

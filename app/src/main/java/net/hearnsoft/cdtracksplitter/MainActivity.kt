@@ -17,6 +17,7 @@ import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -153,27 +154,104 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initPermissions() {
+        // 检查并请求必要的音频权限
+        val audioPermission = PermissionLists.getReadMediaAudioPermission()
+        val otherPermissions = mutableListOf<IPermission?>().apply {
+            addAll(
+                listOf(
+                    PermissionLists.getReadMediaImagesPermission(),
+                    PermissionLists.getReadMediaVisualUserSelectedPermission(),
+                    PermissionLists.getPostNotificationsPermission()
+                ))
+        }
+
+        // 首先检查是否已经有音频权限
+        if (XXPermissions.isGrantedPermission(this, audioPermission)) {
+            // 音频权限已授予，请求其他非必要权限
+            requestOptionalPermissions(otherPermissions)
+        } else {
+            // 请求必要的音频权限
+            XXPermissions.with(this)
+                .permission(audioPermission)
+                .request(object : OnPermissionCallback {
+                    override fun onGranted(permissions: List<IPermission?>, allGranted: Boolean) {
+                        if (allGranted) {
+                            // 音频权限已获取，继续请求其他非必要权限
+                            requestOptionalPermissions(otherPermissions)
+                        } else {
+                            // 音频权限部分获取（通常不会发生，因为我们只请求了一个权限集）
+                            showAudioPermissionRequiredDialog()
+                        }
+                    }
+
+                    override fun onDenied(permissions: List<IPermission?>, doNotAskAgain: Boolean) {
+                        super.onDenied(permissions, doNotAskAgain)
+                        if (doNotAskAgain) {
+                            // 用户永久拒绝了权限，提示用户需要手动授予
+                            showAudioPermissionSettingsDialog()
+                        } else {
+                            // 用户拒绝了权限但没有选择"不再询问"，告知用户该权限的重要性
+                            showAudioPermissionRequiredDialog()
+                        }
+                    }
+                })
+        }
+    }
+
+    /**
+     * 请求非必要的可选权限
+     */
+    private fun requestOptionalPermissions(permissions: List<IPermission?>) {
         XXPermissions.with(this)
-            .permission(PermissionLists.getReadMediaImagesPermission())
-            .permission(PermissionLists.getReadMediaAudioPermission())
-            .permission(PermissionLists.getReadMediaVisualUserSelectedPermission())
-            .permission(PermissionLists.getPostNotificationsPermission())
+            .permissions(permissions)
             .request(object : OnPermissionCallback {
                 override fun onGranted(permissions: List<IPermission?>, allGranted: Boolean) {
                     if (!allGranted) {
-                        Toast.makeText(this@MainActivity, R.string.permission_missing, Toast.LENGTH_SHORT).show()
-                        return
+                        // 部分可选权限未授予，但不影响核心功能
+                        Toast.makeText(this@MainActivity, R.string.optional_permissions_denied, Toast.LENGTH_SHORT).show()
                     }
                 }
 
                 override fun onDenied(permissions: List<IPermission?>, doNotAskAgain: Boolean) {
                     super.onDenied(permissions, doNotAskAgain)
-                    if (doNotAskAgain) {
-                        Toast.makeText(this@MainActivity, R.string.permission_denied, Toast.LENGTH_SHORT).show()
-                        XXPermissions.startPermissionActivity(this@MainActivity, permissions)
-                    }
+                    // 可选权限被拒绝，仅显示提示但不影响应用继续使用
+                    Toast.makeText(this@MainActivity, R.string.optional_permissions_denied, Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    /**
+     * 显示音频权限必要提示对话框
+     */
+    private fun showAudioPermissionRequiredDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(R.string.permission_required_title)
+            .setMessage(R.string.audio_permission_required_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.retry) { _, _ ->
+                initPermissions() // 重新请求权限
+            }
+            .setNegativeButton(R.string.exit_app) { _, _ ->
+                finish() // 退出应用
+            }
+        builder.create().show()
+    }
+
+    /**
+     * 显示前往设置授予权限的对话框
+     */
+    private fun showAudioPermissionSettingsDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(R.string.permission_required_title)
+            .setMessage(R.string.audio_permission_settings_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.settings) { _, _ ->
+                XXPermissions.startPermissionActivity(this, PermissionLists.getReadMediaAudioPermission())
+            }
+            .setNegativeButton(R.string.exit_app) { _, _ ->
+                finish() // 退出应用
+            }
+        builder.create().show()
     }
 
     private fun initViews() {
