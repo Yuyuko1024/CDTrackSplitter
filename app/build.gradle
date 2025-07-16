@@ -19,6 +19,7 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 
     buildTypes {
@@ -61,6 +62,9 @@ dependencies {
 
     // EasyPermission
     implementation(libs.xxpermissions)
+
+    // Html utils
+    implementation 'dev.rikka.rikkax.html:html-ktx:1.1.2'
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

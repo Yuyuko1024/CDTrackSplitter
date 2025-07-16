@@ -41,6 +41,11 @@
                 layout="@layout/output_card"
                 android:id="@+id/outputCardView"/>
 
+            <!-- About card -->
+            <include
+                layout="@layout/about_card"
+                android:id="@+id/aboutCardView"/>
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>

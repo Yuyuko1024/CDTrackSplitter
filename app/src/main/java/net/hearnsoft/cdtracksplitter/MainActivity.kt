@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.text.method.LinkMovementMethod
 import android.text.method.ScrollingMovementMethod
 import android.view.View
 import android.widget.SeekBar
@@ -30,6 +31,7 @@ import com.hjq.permissions.permission.PermissionLists
 import com.hjq.permissions.permission.base.IPermission
 import net.hearnsoft.cdtracksplitter.adapter.TrackAdapter
 import net.hearnsoft.cdtracksplitter.databinding.ActivityMainBinding
+import net.hearnsoft.cdtracksplitter.ktx.toHtml
 import net.hearnsoft.cdtracksplitter.model.TimePosition
 import net.hearnsoft.cdtracksplitter.model.TrackItem
 import net.hearnsoft.cdtracksplitter.parser.CueParser
@@ -318,6 +320,18 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        // 关于对话框
+        binding.aboutCardView.sourceCode.movementMethod = LinkMovementMethod.getInstance()
+        binding.aboutCardView.sourceCode.text = getString(
+            R.string.about_view_source_code,
+            "<b><a href=\"https://github.com/Yuyuko1024/CDTrackSplitter\">GitHub</a></b>"
+        ).toHtml()
+        val info = packageManager.getApplicationInfo(BuildConfig.APPLICATION_ID, 0)
+        binding.aboutCardView.icon.setImageDrawable(
+            info.loadIcon(packageManager)
+        )
+        binding.aboutCardView.versionName.text = packageManager.getPackageInfo(packageName, 0).versionName
     }
 
     private fun setupLogTextView() {

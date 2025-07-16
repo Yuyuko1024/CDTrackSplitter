@@ -79,4 +79,8 @@
     <!-- File validation strings -->
     <string name="invalid_audio_format">Unsupported audio format. Please select MP3, FLAC, WAV, AAC, or other common audio files.</string>
     <string name="invalid_cue_format">Invalid file format. Please select a valid CUE file (.cue extension required).</string>
+
+    <!-- About text -->
+    <string name="about_text">A simple tool for splitting a single CD track file into multiple files for each song on the entire album, powered by FFmpeg. </string>
+    <string name="about_view_source_code"><![CDATA[View source code at %s]]></string>
 </resources>

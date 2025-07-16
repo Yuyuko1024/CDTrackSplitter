@@ -80,4 +80,8 @@
     <!-- File validation strings -->
     <string name="invalid_audio_format">不支持的音频格式。请选择MP3、FLAC、WAV、AAC或其他常见音频文件。</string>
     <string name="invalid_cue_format">无效的文件格式。请选择有效的CUE文件（需要.cue扩展名）。</string>
+
+    <!-- About text -->
+    <string name="about_text">一个用于分割单个CD音轨文件为整张专辑单曲的多个文件的简单工具，由FFmpeg强力驱动。</string>
+    <string name="about_view_source_code"><![CDATA[在 %s 查看源码]]></string>
 </resources>
