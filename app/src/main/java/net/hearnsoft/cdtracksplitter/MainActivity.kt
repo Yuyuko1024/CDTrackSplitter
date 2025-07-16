@@ -22,6 +22,10 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.documentfile.provider.DocumentFile
 import com.bumptech.glide.Glide
+import com.hjq.permissions.OnPermissionCallback
+import com.hjq.permissions.XXPermissions
+import com.hjq.permissions.permission.PermissionLists
+import com.hjq.permissions.permission.base.IPermission
 import net.hearnsoft.cdtracksplitter.databinding.ActivityMainBinding
 import net.hearnsoft.cdtracksplitter.service.AudioProcessingService
 
@@ -142,9 +146,34 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        initPermissions()
         initViews()
         initMiniPlayer()
         setupLogTextView()
+    }
+
+    private fun initPermissions() {
+        XXPermissions.with(this)
+            .permission(PermissionLists.getReadMediaImagesPermission())
+            .permission(PermissionLists.getReadMediaAudioPermission())
+            .permission(PermissionLists.getReadMediaVisualUserSelectedPermission())
+            .permission(PermissionLists.getPostNotificationsPermission())
+            .request(object : OnPermissionCallback {
+                override fun onGranted(permissions: List<IPermission?>, allGranted: Boolean) {
+                    if (!allGranted) {
+                        Toast.makeText(this@MainActivity, R.string.permission_missing, Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+
+                override fun onDenied(permissions: List<IPermission?>, doNotAskAgain: Boolean) {
+                    super.onDenied(permissions, doNotAskAgain)
+                    if (doNotAskAgain) {
+                        Toast.makeText(this@MainActivity, R.string.permission_denied, Toast.LENGTH_SHORT).show()
+                        XXPermissions.startPermissionActivity(this@MainActivity, permissions)
+                    }
+                }
+            })
     }
 
     private fun initViews() {

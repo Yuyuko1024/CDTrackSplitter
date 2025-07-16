@@ -3,8 +3,11 @@
     <string name="preview_play_cont_desc">Track Preview Play</string>
     <string name="cover_image_desc">Cover image</string>
 
+    <string name="permission_missing">Missing some permissions</string>
+    <string name="permission_denied">Permission denied,please grant it manually</string>
+
     <!-- Main Activity strings -->
-    <string name="ready_to_process">Ready to process CD tracks...</string>
+    <string name="ready_to_process">Ready to process CD tracks…</string>
     <string name="selected_track_file">Selected track file</string>
     <string name="selected_cue_file">Selected CUE file</string>
     <string name="selected_cover_image">Selected cover image</string>

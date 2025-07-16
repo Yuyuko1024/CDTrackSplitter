@@ -4,6 +4,9 @@
     <string name="preview_play_cont_desc">音轨预览播放</string>
     <string name="cover_image_desc">封面图片</string>
 
+    <string name="permission_missing">获取部分权限成功，但部分权限未正常授予</string>
+    <string name="permission_denied">被永久拒绝授权，请手动授予权限</string>
+
     <!-- Main Activity strings -->
     <string name="ready_to_process">准备处理CD音轨…</string>
     <string name="selected_track_file">已选择音轨文件</string>

@@ -8,6 +8,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
 
@@ -21,6 +23,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CDTrackSplitter"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="ScopedStorage"
+            android:value="true" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

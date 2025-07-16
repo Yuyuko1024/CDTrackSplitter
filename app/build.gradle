@@ -57,7 +57,10 @@ dependencies {
 
     // Media3
     implementation(libs.androidx.media3.common.ktx)
-    implementation libs.androidx.media3.extractor
+    implementation(libs.androidx.media3.extractor)
+
+    // EasyPermission
+    implementation(libs.xxpermissions)
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
