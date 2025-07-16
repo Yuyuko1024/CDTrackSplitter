@@ -28,6 +28,7 @@
                 android:maxLines="2"
                 android:ellipsize="marquee"
                 android:focusable="true"
+                android:layout_marginHorizontal="8dp"
                 android:text="@string/no_cover_selected"/>
 
             <com.google.android.material.button.MaterialButton

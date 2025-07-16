@@ -10,26 +10,58 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:padding="@dimen/cardview_padding">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/cueFileTitle"
-            android:maxLines="2"
-            android:ellipsize="marquee"
-            android:focusable="true"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"
-            android:text="@string/no_cue_selected"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:padding="@dimen/cardview_padding">
 
-        <com.google.android.material.button.MaterialButton
-            android:layout_width="wrap_content"
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/cueFileTitle"
+                android:maxLines="2"
+                android:ellipsize="marquee"
+                android:focusable="true"
+                android:layout_gravity="center_vertical"
+                android:layout_marginHorizontal="8dp"
+                android:layout_weight="1"
+                android:text="@string/no_cue_selected"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/cueSelectButton"
+                android:text="@string/select_button"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/cueSelectButton"
-            android:text="@string/select_button"/>
+            android:orientation="vertical"
+            android:id="@+id/trackListContainer"
+            android:padding="@dimen/cardview_padding">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="8dp"
+                android:text="@string/track_list_title"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/trackListRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                android:nestedScrollingEnabled="false"
+                android:maxHeight="200dp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 

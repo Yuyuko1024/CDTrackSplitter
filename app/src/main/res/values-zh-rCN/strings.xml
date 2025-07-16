@@ -73,4 +73,7 @@
     <string name="retry">重试</string>
     <string name="settings">设置</string>
     <string name="exit_app">退出应用</string>
+
+    <!-- Track list strings -->
+    <string name="track_list_title">轨道列表</string>
 </resources>

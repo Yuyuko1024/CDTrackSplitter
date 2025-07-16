@@ -26,6 +26,7 @@
                 android:maxLines="2"
                 android:ellipsize="marquee"
                 android:focusable="true"
+                android:layout_marginHorizontal="8dp"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
                 android:text="@string/no_track_selected"/>

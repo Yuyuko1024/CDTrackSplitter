@@ -22,12 +22,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.documentfile.provider.DocumentFile
+import androidx.recyclerview.widget.DefaultItemAnimator
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.hjq.permissions.OnPermissionCallback
 import com.hjq.permissions.XXPermissions
 import com.hjq.permissions.permission.PermissionLists
 import com.hjq.permissions.permission.base.IPermission
+import net.hearnsoft.cdtracksplitter.adapter.TrackAdapter
 import net.hearnsoft.cdtracksplitter.databinding.ActivityMainBinding
+import net.hearnsoft.cdtracksplitter.model.TimePosition
+import net.hearnsoft.cdtracksplitter.model.TrackItem
+import net.hearnsoft.cdtracksplitter.parser.CueParser
 import net.hearnsoft.cdtracksplitter.service.AudioProcessingService
 
 class MainActivity : AppCompatActivity() {
@@ -35,6 +41,10 @@ class MainActivity : AppCompatActivity() {
     private val binding by lazy {
         ActivityMainBinding.inflate(layoutInflater)
     }
+
+    // TrackList
+    private var trackAdapter: TrackAdapter? = null
+    private var cueTrackList: List<TrackItem> = emptyList()
 
     // Track file selection
     private var selectedTrackFile: Uri? = null
@@ -382,6 +392,9 @@ class MainActivity : AppCompatActivity() {
         val fileName = getFileName(uri)
         binding.cueFileCardView.cueFileTitle.text = fileName ?: getString(R.string.selected_cue_file)
 
+        // 解析CUE文件并显示轨道列表
+        parseCueFileAndShowTracks(uri)
+
         // 更新处理按钮状态
         updateProcessButtonState()
 
@@ -621,6 +634,87 @@ class MainActivity : AppCompatActivity() {
         val seconds = (position / 1000) % 60
         binding.trackCardView.miniPlayer.playbackPosition.text = String.format("%02d:%02d", minutes, seconds)
     }
+
+    private fun parseCueFileAndShowTracks(cueUri: Uri) {
+        try {
+            val cueParser = CueParser(this)
+            val cueFile = cueParser.parse(cueUri)
+
+            if (cueFile != null && cueFile.tracks.isNotEmpty()) {
+                // 转换Track对象为TrackItem
+                cueTrackList = cueFile.tracks.map { track ->
+                    val startTime = track.mainIndex?.time
+                    val startTimeMs = startTime?.toMilliseconds() ?: 0L
+                    val indexTime = startTime?.let { formatTimeFromTimePosition(it) } ?: "00:00"
+
+                    TrackItem(
+                        number = track.number,
+                        title = track.title ?: "Track ${track.number}",
+                        artist = track.performer,
+                        startTimeMs = startTimeMs,
+                        indexTime = indexTime
+                    )
+                }
+
+                setupTrackRecyclerView()
+                binding.cueFileCardView.trackListRecyclerView.visibility = View.VISIBLE
+
+                appendLog("CUE解析成功，找到 ${cueTrackList.size} 个轨道")
+            } else {
+                binding.cueFileCardView.trackListRecyclerView.visibility = View.GONE
+                appendLog("CUE文件解析失败或没有找到轨道")
+            }
+        } catch (e: Exception) {
+            binding.cueFileCardView.trackListRecyclerView.visibility = View.GONE
+            appendLog("CUE文件解析错误: ${e.message}")
+        }
+    }
+
+    private fun setupTrackRecyclerView() {
+        trackAdapter = TrackAdapter(cueTrackList) { trackItem ->
+            onTrackItemClick(trackItem)
+        }
+
+        binding.cueFileCardView.trackListRecyclerView.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = trackAdapter
+            itemAnimator = DefaultItemAnimator()
+        }
+    }
+
+    private fun onTrackItemClick(trackItem: TrackItem) {
+        mediaPlayer?.let { player ->
+            // Seek到指定位置
+            player.seekTo(trackItem.startTimeMs.toInt())
+            updateTimeDisplay(trackItem.startTimeMs.toInt())
+
+            // 如果当前是暂停状态，只seek不播放
+            // 如果正在播放，继续播放
+            if (isPlaying) {
+                // 播放状态下，seek后继续播放
+            } else {
+                // 暂停状态下，只更新进度条
+                val duration = player.duration
+                if (duration > 0) {
+                    val progress = (trackItem.startTimeMs * 100) / duration
+                    binding.trackCardView.miniPlayer.seekBar.progress = progress.toInt()
+                }
+            }
+
+            appendLog("跳转到轨道 ${trackItem.number}: ${trackItem.title} (${trackItem.indexTime})")
+        } ?: run {
+            Toast.makeText(this, "请先选择音频文件", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun formatTimeFromTimePosition(timePosition: TimePosition): String {
+        val totalSeconds = timePosition.minutes * 60 + timePosition.seconds
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
+
+    // ------------- 文件方法 --------------
 
     private fun getFileName(uri: Uri): String? {
         return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
