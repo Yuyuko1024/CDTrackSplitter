@@ -2,4 +2,62 @@
     <string name="app_name">CDTrackSplitter</string>
     <string name="preview_play_cont_desc">Track Preview Play</string>
     <string name="cover_image_desc">Cover image</string>
+
+    <!-- Main Activity strings -->
+    <string name="ready_to_process">Ready to process CD tracks...</string>
+    <string name="selected_track_file">Selected track file</string>
+    <string name="selected_cue_file">Selected CUE file</string>
+    <string name="selected_cover_image">Selected cover image</string>
+    <string name="selected_output_directory">Selected output directory</string>
+    <string name="start_processing">Start Process</string>
+    <string name="stop_processing">Stop Processing</string>
+    <string name="select_files_first">Select all files first</string>
+    <string name="select_files_toast">Please select all required files before processing</string>
+    <string name="starting_process">Starting audio processing…</string>
+    <string name="stopping_process">Stopping processing…</string>
+    <string name="output_dir_success">Output directory selected successfully</string>
+    <string name="dir_permission_error">Failed to get directory permissions: %1$s</string>
+    <string name="dir_error">Error selecting directory: %1$s</string>
+    <string name="media_error">Error playing audio: %1$d</string>
+    <string name="audio_load_error">Error loading audio file: %1$s</string>
+    <string name="selected_track_log">Selected track file: %1$s</string>
+    <string name="selected_cue_log">Selected CUE file: %1$s</string>
+    <string name="selected_cover_log">Selected cover image: %1$s</string>
+    <string name="selected_output_log">Selected output directory: %1$s</string>
+    <string name="process_success_toast">All tracks processed successfully!</string>
+    <string name="process_failed_toast">Processing failed: %1$s</string>
+    <string name="log_process_success">✓ Processing completed successfully!</string>
+    <string name="log_process_failed">✗ Processing failed: %1$s</string>
+    
+    <!-- Service notification strings -->
+    <string name="notification_channel_name">Audio Processing</string>
+    <string name="notification_channel_desc">CD Track Splitting Progress</string>
+    <string name="notification_title">Processing CD Tracks</string>
+    <string name="notification_preparing">Starting audio processing…</string>
+    <string name="notification_preparing_files">Preparing files</string>
+    <string name="processing_track">Processing track %1$d/%2$d</string>
+    <string name="completed_track">Completed track %1$d</string>
+    <string name="processing_completed">Processing completed</string>
+    <string name="parsing_cue">Parsing CUE file…</string>
+    <string name="cue_parsed">CUE file parsed successfully. Found %1$d tracks</string>
+    <string name="preparing_files">Preparing files…</string>
+    <string name="starting_split">Files prepared, starting track splitting…</string>
+    <string name="processing_track_log">Processing track %1$d: %2$s</string>
+    <string name="all_tracks_success">All tracks processed successfully!</string>
+    <string name="process_success">Successfully processed %1$d tracks</string>
+    <string name="processing_failed">Processing failed: %1$s</string>
+    <string name="track_completed">Track %1$d completed successfully</string>
+    <string name="track_failed">Track %1$d failed with return code: %2$s</string>
+    <string name="track_progress">Track %1$d progress: %2$d%%</string>
+    <string name="metadata_updated">Metadata and cover updated for track %1$d</string>
+    <string name="metadata_failed">Warning: Failed to update metadata for track %1$d</string>
+
+    <!-- Layout string resources -->
+    <string name="no_track_selected">No selected track file</string>
+    <string name="no_cue_selected">No selected cue file</string>
+    <string name="no_cover_selected">No selected cover file</string>
+    <string name="no_output_log">Ready to process CD tracks...</string>
+    <string name="select_button">Select</string>
+    <string name="select_output_dir">Select Output Dir</string>
+    <string name="process_button">Start Process</string>
 </resources>

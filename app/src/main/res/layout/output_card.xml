@@ -17,13 +17,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/selectOutputButton"
-            android:text="Select Output Dir"/>
+            android:text="@string/select_output_dir"/>
 
         <com.google.android.material.button.MaterialButton
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/processButton"
-            android:text="Process"/>
+            android:text="@string/process_button"/>
 
         <ProgressBar
             android:layout_width="match_parent"
@@ -48,7 +48,7 @@
                     android:id="@+id/outputLogTextView"
                     android:ellipsize="start"
                     android:scrollbars="vertical"
-                    android:text="No ffmpeg output log"
+                    android:text="@string/no_output_log"
                     android:paddingTop="8dp"/>
 
             </LinearLayout>

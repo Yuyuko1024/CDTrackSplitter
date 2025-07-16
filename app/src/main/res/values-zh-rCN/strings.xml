@@ -3,4 +3,62 @@
     <string name="app_name">音轨分割器</string>
     <string name="preview_play_cont_desc">音轨预览播放</string>
     <string name="cover_image_desc">封面图片</string>
+
+    <!-- Main Activity strings -->
+    <string name="ready_to_process">准备处理CD音轨…</string>
+    <string name="selected_track_file">已选择音轨文件</string>
+    <string name="selected_cue_file">已选择CUE文件</string>
+    <string name="selected_cover_image">已选择封面图片</string>
+    <string name="selected_output_directory">已选择输出目录</string>
+    <string name="start_processing">开始处理</string>
+    <string name="stop_processing">停止处理</string>
+    <string name="select_files_first">请先选择所有文件</string>
+    <string name="select_files_toast">请在处理前选择所有必要文件</string>
+    <string name="starting_process">开始音频处理…</string>
+    <string name="stopping_process">正在停止处理…</string>
+    <string name="output_dir_success">输出目录选择成功</string>
+    <string name="dir_permission_error">获取目录权限失败: %1$s</string>
+    <string name="dir_error">选择目录错误: %1$s</string>
+    <string name="media_error">播放音频错误: %1$d</string>
+    <string name="audio_load_error">加载音频文件错误: %1$s</string>
+    <string name="selected_track_log">已选择音轨文件: %1$s</string>
+    <string name="selected_cue_log">已选择CUE文件: %1$s</string>
+    <string name="selected_cover_log">已选择封面图片: %1$s</string>
+    <string name="selected_output_log">已选择输出目录: %1$s</string>
+    <string name="process_success_toast">所有音轨处理成功!</string>
+    <string name="process_failed_toast">处理失败: %1$s</string>
+    <string name="log_process_success">✓ 分割任务已完成!</string>
+    <string name="log_process_failed">✗ 处理失败: %1$s</string>
+    
+    <!-- Service notification strings -->
+    <string name="notification_channel_name">音频处理</string>
+    <string name="notification_channel_desc">CD音轨分割进度</string>
+    <string name="notification_title">正在处理CD音轨</string>
+    <string name="notification_preparing">开始音频处理…</string>
+    <string name="notification_preparing_files">准备文件中</string>
+    <string name="processing_track">正在处理音轨 %1$d/%2$d</string>
+    <string name="completed_track">已完成音轨 %1$d</string>
+    <string name="processing_completed">处理完成</string>
+    <string name="parsing_cue">解析CUE文件中…</string>
+    <string name="cue_parsed">CUE文件解析成功。找到 %1$d 个音轨</string>
+    <string name="preparing_files">准备文件中…</string>
+    <string name="starting_split">文件准备就绪，开始分割音轨…</string>
+    <string name="processing_track_log">正在处理音轨 %1$d: %2$s</string>
+    <string name="all_tracks_success">所有音轨处理成功!</string>
+    <string name="process_success">成功处理 %1$d 个音轨</string>
+    <string name="processing_failed">处理失败: %1$s</string>
+    <string name="track_completed">音轨 %1$d 处理成功</string>
+    <string name="track_failed">音轨 %1$d 处理失败，返回代码: %2$s</string>
+    <string name="track_progress">音轨 %1$d 进度: %2$d%%</string>
+    <string name="metadata_updated">音轨 %1$d 的元数据和封面已更新</string>
+    <string name="metadata_failed">警告: 无法更新音轨 %1$d 的元数据</string>
+
+    <!-- Layout string resources -->
+    <string name="no_track_selected">未选择音轨文件</string>
+    <string name="no_cue_selected">未选择CUE文件</string>
+    <string name="no_cover_selected">未选择封面图片</string>
+    <string name="no_output_log">准备处理CD音轨…</string>
+    <string name="select_button">选择</string>
+    <string name="select_output_dir">选择输出目录</string>
+    <string name="process_button">处理</string>
 </resources>

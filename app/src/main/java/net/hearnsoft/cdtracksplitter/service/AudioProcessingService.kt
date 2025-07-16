@@ -116,10 +116,10 @@ class AudioProcessingService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Audio Processing",
+                getString(R.string.notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "CD Track Splitting Progress"
+                description = getString(R.string.notification_channel_desc)
                 setSound(null, null)
             }
 
@@ -168,7 +168,7 @@ class AudioProcessingService : Service() {
         processedTracks.set(0)
 
         // 启动前台服务
-        val notification = createNotification("Starting audio processing...", "Preparing files", 0)
+        val notification = createNotification(getString(R.string.notification_preparing), getString(R.string.notification_preparing_files), 0)
         startForeground(NOTIFICATION_ID, notification)
 
         // 在后台线程执行处理
@@ -199,21 +199,21 @@ class AudioProcessingService : Service() {
             if (isCancelled.get()) return
 
             // 解析CUE文件
-            postLog("Parsing CUE file...")
-            postProgressUpdate(5, "Parsing CUE file...")
+            postLog(getString(R.string.parsing_cue))
+            postProgressUpdate(5, getString(R.string.parsing_cue))
 
             val cueParser = CueParser(this)
             val cueFile = cueParser.parse(cueUri)
                 ?: throw Exception("Failed to parse CUE file")
 
             totalTracks.set(cueFile.tracks.size)
-            postLog("CUE file parsed successfully. Found ${cueFile.tracks.size} tracks")
+            postLog(getString(R.string.cue_parsed, cueFile.tracks.size))
 
             if (isCancelled.get()) return
 
             // 准备临时目录和文件
-            postLog("Preparing files...")
-            postProgressUpdate(10, "Preparing files...")
+            postLog(getString(R.string.preparing_files))
+            postProgressUpdate(10, getString(R.string.preparing_files))
 
             val tempDir = File(cacheDir, "audio_processing_${System.currentTimeMillis()}")
             if (!tempDir.exists()) tempDir.mkdirs()
@@ -224,7 +224,7 @@ class AudioProcessingService : Service() {
 
                 if (isCancelled.get()) return
 
-                postLog("Files prepared, starting track splitting...")
+                postLog(getString(R.string.starting_split))
 
                 // 处理每个轨道
                 cueFile.tracks.forEachIndexed { index, track ->
@@ -238,8 +238,8 @@ class AudioProcessingService : Service() {
                         "${String.format("%02d", track.number)}. ${track.title ?: "Track ${track.number}"}"
                     )
 
-                    postLog("Processing track ${track.number}: ${track.title}")
-                    postProgressUpdate(currentOverallProgress, "Processing track ${track.number}/${cueFile.tracks.size}")
+                    postLog(getString(R.string.processing_track_log, track.number, track.title ?: ""))
+                    postProgressUpdate(currentOverallProgress, getString(R.string.processing_track, track.number, cueFile.tracks.size))
 
                     processTrackInBackground(
                         inputFile = inputFile,
@@ -254,14 +254,14 @@ class AudioProcessingService : Service() {
                     if (!isCancelled.get()) {
                         processedTracks.incrementAndGet()
                         val completedProgress = baseProgress + ((index + 1) * 80) / cueFile.tracks.size
-                        postProgressUpdate(completedProgress, "Completed track ${track.number}")
+                        postProgressUpdate(completedProgress, getString(R.string.completed_track, track.number))
                     }
                 }
 
                 if (!isCancelled.get()) {
-                    postProgressUpdate(100, "Processing completed")
-                    postLog("All tracks processed successfully!")
-                    postProcessingComplete(true, "Successfully processed ${cueFile.tracks.size} tracks")
+                    postProgressUpdate(100, getString(R.string.processing_completed))
+                    postLog(getString(R.string.all_tracks_success))
+                    postProcessingComplete(true, getString(R.string.process_success, cueFile.tracks.size))
                 }
 
             } finally {
@@ -276,7 +276,7 @@ class AudioProcessingService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "Processing error", e)
             postLog("Error: ${e.message}")
-            postProcessingComplete(false, e.message ?: "Unknown error occurred")
+            postProcessingComplete(false, getString(R.string.processing_failed, e.message ?: "Unknown error"))
         }
     }
 
@@ -324,9 +324,9 @@ class AudioProcessingService : Service() {
                     sessionSuccess.set(ReturnCode.isSuccess(returnCode))
 
                     if (ReturnCode.isSuccess(returnCode)) {
-                        postLog("Track ${track.number} completed successfully")
+                        postLog(getString(R.string.track_completed, track.number))
                     } else {
-                        val error = "Track ${track.number} failed with return code: $returnCode"
+                        val error = getString(R.string.track_failed, track.number, returnCode)
                         postLog(error)
                         Log.e(TAG, error)
                     }
@@ -344,7 +344,7 @@ class AudioProcessingService : Service() {
                         if (trackDuration > 0 && statistics.time > 0) {
                             val progress = ((statistics.time / 1000.0) / trackDuration * 100).roundToInt()
                             if (progress % 10 == 0) { // 每10%更新一次，减少UI更新频率
-                                postLog("Track ${track.number} progress: $progress%")
+                                postLog(getString(R.string.track_progress, track.number, progress))
                             }
                         }
                     }
@@ -376,9 +376,9 @@ class AudioProcessingService : Service() {
                 )
 
                 if (metadataUpdateSuccess) {
-                    postLog("Metadata and cover updated for track ${track.number}")
+                    postLog(getString(R.string.metadata_updated, track.number))
                 } else {
-                    postLog("Warning: Failed to update metadata for track ${track.number}")
+                    postLog(getString(R.string.metadata_failed, track.number))
                 }
             }
 
@@ -507,8 +507,8 @@ class AudioProcessingService : Service() {
     }
 
     private fun updateNotification(content: String, progress: Int) {
-        val notification = createNotification("Processing CD Tracks", content, progress)
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notification = createNotification(getString(R.string.notification_title), content, progress)
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 

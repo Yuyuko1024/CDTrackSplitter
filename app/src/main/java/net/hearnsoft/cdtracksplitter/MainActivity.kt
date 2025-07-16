@@ -111,12 +111,12 @@ class MainActivity : AppCompatActivity() {
                 updateProcessingUI()
 
                 if (success) {
-                    appendLog("✓ Processing completed successfully!")
+                    appendLog(getString(R.string.log_process_success))
                     binding.outputCardView.outputProgressBar.progress = 100
-                    Toast.makeText(this@MainActivity, "All tracks processed successfully!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.process_success_toast), Toast.LENGTH_LONG).show()
                 } else {
-                    appendLog("✗ Processing failed: $message")
-                    Toast.makeText(this@MainActivity, "Processing failed: $message", Toast.LENGTH_LONG).show()
+                    appendLog(getString(R.string.log_process_failed, message))
+                    Toast.makeText(this@MainActivity, getString(R.string.process_failed_toast ,message), Toast.LENGTH_LONG).show()
                 }
             }
 
@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupLogTextView() {
         binding.outputCardView.outputLogTextView.movementMethod = ScrollingMovementMethod()
-        binding.outputCardView.outputLogTextView.text = "Ready to process CD tracks...\n"
+        binding.outputCardView.outputLogTextView.text = getString(R.string.ready_to_process) + "\n"
     }
 
     private fun appendLog(message: String) {
@@ -248,7 +248,7 @@ class MainActivity : AppCompatActivity() {
 
         // Update UI
         val fileName = getFileName(uri)
-        binding.trackCardView.trackTitle.text = fileName ?: "Selected track file"
+        binding.trackCardView.trackTitle.text = fileName ?: getString(R.string.selected_track_file)
 
         // Initialize media player with selected file
         initializeMediaPlayer(uri)
@@ -256,7 +256,7 @@ class MainActivity : AppCompatActivity() {
         // 更新处理按钮状态
         updateProcessButtonState()
 
-        appendLog("Selected track file: $fileName")
+        appendLog(getString(R.string.selected_track_log, fileName))
     }
 
     private fun handleCueFileSelected(uri: Uri) {
@@ -264,12 +264,12 @@ class MainActivity : AppCompatActivity() {
 
         // Update UI
         val fileName = getFileName(uri)
-        binding.cueFileCardView.cueFileTitle.text = fileName ?: "Selected CUE file"
+        binding.cueFileCardView.cueFileTitle.text = fileName ?: getString(R.string.selected_cue_file)
 
         // 更新处理按钮状态
         updateProcessButtonState()
 
-        appendLog("Selected CUE file: $fileName")
+        appendLog(getString(R.string.selected_cue_log, fileName))
     }
 
     private fun handleCoverImageSelected(uri: Uri) {
@@ -277,7 +277,7 @@ class MainActivity : AppCompatActivity() {
 
         // Update UI
         val fileName = getFileName(uri)
-        binding.coverCardView.coverTitle.text = fileName ?: "Selected cover image"
+        binding.coverCardView.coverTitle.text = fileName ?: getString(R.string.selected_cover_image)
 
         // Show and load image
         binding.coverCardView.coverImage.visibility = View.VISIBLE
@@ -287,7 +287,7 @@ class MainActivity : AppCompatActivity() {
             .centerCrop()
             .into(binding.coverCardView.coverImage)
 
-        appendLog("Selected cover image: $fileName")
+        appendLog(getString(R.string.selected_cover_log, fileName))
     }
 
     private fun handleOutputDirectorySelected(uri: Uri) {
@@ -302,20 +302,20 @@ class MainActivity : AppCompatActivity() {
 
             // 更新UI显示
             val directoryName = getDirectoryName(uri)
-            binding.outputCardView.selectOutputButton.text = directoryName ?: "Selected output directory"
+            binding.outputCardView.selectOutputButton.text = directoryName ?: getString(R.string.selected_output_directory)
 
             // 启用处理按钮（如果其他必要文件也已选择）
             updateProcessButtonState()
 
-            Toast.makeText(this, "Output directory selected successfully", Toast.LENGTH_SHORT).show()
-            appendLog("Selected output directory: $directoryName")
+            Toast.makeText(this, getString(R.string.output_dir_success), Toast.LENGTH_SHORT).show()
+            appendLog(getString(R.string.selected_output_log, directoryName))
 
         } catch (e: SecurityException) {
-            Toast.makeText(this, "Failed to get directory permissions: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.dir_permission_error, e.message), Toast.LENGTH_LONG).show()
             selectedOutputDirectory = null
             appendLog("Error: Failed to get directory permissions")
         } catch (e: Exception) {
-            Toast.makeText(this, "Error selecting directory: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.dir_error, e.message), Toast.LENGTH_LONG).show()
             selectedOutputDirectory = null
             appendLog("Error: ${e.message}")
         }
@@ -327,17 +327,17 @@ class MainActivity : AppCompatActivity() {
                 selectedCueFile != null &&
                 selectedOutputDirectory != null
 
-        binding.outputCardView.processButton.isEnabled = allFilesSelected && !isProcessing
+        binding.outputCardView.processButton.isEnabled = allFilesSelected
 
         when {
             isProcessing -> {
-                binding.outputCardView.processButton.text = "Stop Processing"
+                binding.outputCardView.processButton.text = getString(R.string.stop_processing)
             }
             allFilesSelected -> {
-                binding.outputCardView.processButton.text = "Start Processing"
+                binding.outputCardView.processButton.text = getString(R.string.start_processing)
             }
             else -> {
-                binding.outputCardView.processButton.text = "Select all files first"
+                binding.outputCardView.processButton.text = getString(R.string.select_files_first)
             }
         }
     }
@@ -356,14 +356,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun startProcessing() {
         if (selectedTrackFile == null || selectedCueFile == null || selectedOutputDirectory == null) {
-            Toast.makeText(this, "Please select all required files before processing", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.select_files_toast), Toast.LENGTH_SHORT).show()
             return
         }
 
         isProcessing = true
         updateProcessingUI()
 
-        appendLog("Starting audio processing...")
+        appendLog(getString(R.string.starting_process))
 
         // 绑定服务
         val intent = Intent(this, AudioProcessingService::class.java).apply {
@@ -390,7 +390,7 @@ class MainActivity : AppCompatActivity() {
         }
         startService(intent)
 
-        appendLog("Stopping processing...")
+        appendLog(getString(R.string.stopping_process))
     }
 
     // ------------ 播放器功能 ---------------
@@ -423,12 +423,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 setOnErrorListener { _, what, extra ->
-                    Toast.makeText(this@MainActivity, "Error playing audio: $what", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.media_error, what), Toast.LENGTH_SHORT).show()
                     true
                 }
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error loading audio file: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.audio_load_error, e.message), Toast.LENGTH_SHORT).show()
         }
     }
 

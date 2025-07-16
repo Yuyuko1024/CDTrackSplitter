@@ -28,13 +28,13 @@
                 android:maxLines="2"
                 android:ellipsize="marquee"
                 android:focusable="true"
-                android:text="No selected cover file"/>
+                android:text="@string/no_cover_selected"/>
 
             <com.google.android.material.button.MaterialButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/coverSelectButton"
-                android:text="Select"/>
+                android:text="@string/select_button"/>
 
         </LinearLayout>
 
