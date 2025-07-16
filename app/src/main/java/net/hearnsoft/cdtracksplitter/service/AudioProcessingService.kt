@@ -22,7 +22,6 @@ import com.arthenica.ffmpegkit.FFmpegSession
 import com.arthenica.ffmpegkit.Level
 import com.arthenica.ffmpegkit.LogCallback
 import com.arthenica.ffmpegkit.ReturnCode
-import com.arthenica.ffmpegkit.SessionState
 import com.arthenica.ffmpegkit.StatisticsCallback
 import net.hearnsoft.cdtracksplitter.MainActivity
 import net.hearnsoft.cdtracksplitter.R
