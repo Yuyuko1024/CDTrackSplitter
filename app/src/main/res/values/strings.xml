@@ -75,4 +75,8 @@
 
     <!-- Track list strings -->
     <string name="track_list_title">Track List</string>
+
+    <!-- File validation strings -->
+    <string name="invalid_audio_format">Unsupported audio format. Please select MP3, FLAC, WAV, AAC, or other common audio files.</string>
+    <string name="invalid_cue_format">Invalid file format. Please select a valid CUE file (.cue extension required).</string>
 </resources>

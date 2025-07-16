@@ -21,7 +21,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.documentfile.provider.DocumentFile
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -35,6 +34,8 @@ import net.hearnsoft.cdtracksplitter.model.TimePosition
 import net.hearnsoft.cdtracksplitter.model.TrackItem
 import net.hearnsoft.cdtracksplitter.parser.CueParser
 import net.hearnsoft.cdtracksplitter.service.AudioProcessingService
+import net.hearnsoft.cdtracksplitter.utils.TypeChecker.isValidAudioFile
+import net.hearnsoft.cdtracksplitter.utils.TypeChecker.isValidCueFile
 
 class MainActivity : AppCompatActivity() {
 
@@ -370,6 +371,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleTrackFileSelected(uri: Uri) {
+        // 验证音频文件格式
+        if (!isValidAudioFile(this@MainActivity, uri)) {
+            Toast.makeText(this, getString(R.string.invalid_audio_format), Toast.LENGTH_LONG).show()
+            appendLog("Error：${getString(R.string.invalid_audio_format)}")
+            return
+        }
+
         selectedTrackFile = uri
 
         // Update UI
@@ -386,6 +394,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleCueFileSelected(uri: Uri) {
+        // 验证CUE文件格式
+        if (!isValidCueFile(this@MainActivity, uri)) {
+            Toast.makeText(this, getString(R.string.invalid_cue_format), Toast.LENGTH_LONG).show()
+            appendLog("Error：${getString(R.string.invalid_cue_format)}")
+            return
+        }
+
         selectedCueFile = uri
 
         // Update UI

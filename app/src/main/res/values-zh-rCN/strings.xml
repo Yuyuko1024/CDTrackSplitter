@@ -76,4 +76,8 @@
 
     <!-- Track list strings -->
     <string name="track_list_title">轨道列表</string>
+
+    <!-- File validation strings -->
+    <string name="invalid_audio_format">不支持的音频格式。请选择MP3、FLAC、WAV、AAC或其他常见音频文件。</string>
+    <string name="invalid_cue_format">无效的文件格式。请选择有效的CUE文件（需要.cue扩展名）。</string>
 </resources>
