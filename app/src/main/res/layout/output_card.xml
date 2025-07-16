@@ -11,7 +11,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="@dimen/cardview_padding">
 
         <com.google.android.material.button.MaterialButton
             android:layout_width="match_parent"
@@ -32,28 +33,18 @@
             android:visibility="gone"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"/>
 
-        <androidx.core.widget.NestedScrollView
+        <TextView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="@dimen/cardview_padding">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="400dp"
-                    android:id="@+id/outputLogTextView"
-                    android:ellipsize="start"
-                    android:scrollbars="vertical"
-                    android:text="@string/no_output_log"
-                    android:paddingTop="8dp"/>
-
-            </LinearLayout>
-
-        </androidx.core.widget.NestedScrollView>
+            android:layout_height="400dp"
+            android:id="@+id/outputLogTextView"
+            android:text="@string/no_output_log"
+            android:paddingTop="8dp"
+            android:paddingHorizontal="@dimen/cardview_padding"
+            android:scrollbars="vertical"
+            android:scrollbarStyle="insideOverlay"
+            android:background="@android:color/transparent"
+            android:textIsSelectable="true"
+            android:gravity="top|start"/>
 
     </LinearLayout>
 

@@ -8,7 +8,7 @@
     <string name="permission_denied">被永久拒绝授权，请手动授予权限</string>
 
     <!-- Main Activity strings -->
-    <string name="ready_to_process">准备处理CD音轨…</string>
+    <string name="ready_to_process">准备处理CD音轨…\n</string>
     <string name="selected_track_file">已选择音轨文件</string>
     <string name="selected_cue_file">已选择CUE文件</string>
     <string name="selected_cover_image">已选择封面图片</string>

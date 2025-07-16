@@ -310,19 +310,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupLogTextView() {
-        binding.outputCardView.outputLogTextView.movementMethod = ScrollingMovementMethod()
-        binding.outputCardView.outputLogTextView.text = getString(R.string.ready_to_process) + "\n"
+        binding.outputCardView.outputLogTextView.apply {
+            movementMethod = ScrollingMovementMethod()
+            text = getString(R.string.ready_to_process)
+            isVerticalScrollBarEnabled = true
+            scrollBarStyle = View.SCROLLBARS_INSIDE_OVERLAY
+        }
     }
 
     private fun appendLog(message: String) {
         val timestamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
         val logMessage = "[$timestamp] $message\n"
-        binding.outputCardView.outputLogTextView.append(logMessage)
+        binding.outputCardView.outputLogTextView.apply {
+            append(logMessage)
 
-        // 自动滚动到底部
-        val scrollAmount = binding.outputCardView.outputLogTextView.layout?.getLineTop(binding.outputCardView.outputLogTextView.lineCount) ?: 0
-        if (scrollAmount > binding.outputCardView.outputLogTextView.height) {
-            binding.outputCardView.outputLogTextView.scrollTo(0, scrollAmount - binding.outputCardView.outputLogTextView.height)
+            // 自动滚动到底部
+            post {
+                val scrollAmount = layout?.getLineTop(lineCount) ?: 0
+                val maxScroll = scrollAmount - height
+                if (maxScroll > 0) {
+                    scrollTo(0, maxScroll)
+                }
+            }
         }
     }
 
